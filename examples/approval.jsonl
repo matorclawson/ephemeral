@@ -1,0 +1,7 @@
+{"op":"register","name":"approve-draft","version":1,"steps":[{"kind":"signal","name":"decision"}]}
+{"op":"start","id":"draft-42","name":"approve-draft","version":1,"queue":"editor","value":{"draft":"42"},"attributes":{"owner":"editor"}}
+{"op":"list","state":"waiting","limit":10}
+{"op":"signal","id":"draft-42","key":"decision-42","name":"decision","value":{"approved":true}}
+{"op":"describe","id":"draft-42"}
+{"op":"find","key":"owner","equal":"editor","limit":10}
+{"op":"history","id":"draft-42","limit":10}
