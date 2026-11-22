@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"ephemeral"
+	"github.com/rodriveracom/ephemeral"
 )
 
 func firstAttempt(path string) error {

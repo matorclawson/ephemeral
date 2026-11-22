@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"ephemeral"
 	"fmt"
+	"github.com/rodriveracom/ephemeral"
 	"io"
 	"os"
 	"time"

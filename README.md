@@ -4,6 +4,8 @@ A compact single-host durable workflow engine for Linux. Embed package ephemeral
 
 ## Try it
 
+Go module: `github.com/rodriveracom/ephemeral`. Embed it with `go get github.com/rodriveracom/ephemeral`.
+
 On a Linux ARM64 host, download the versioned Linux ARM64 tarball and SHA256SUMS from the release. Verify the downloaded file and install the standalone binary.
 
 ```sh
@@ -71,3 +73,7 @@ Activity steps accept kind, name, attempts and backoff_ms. Signal steps accept k
 ## Scope
 
 Workflows use forward-only graphs and statically declared child groups. The engine runs on one host with local SQLite storage. Remote transport, dynamic fan-out, loops and multi-host failover remain future work.
+
+## Contributing
+
+Open an issue or pull request at https://github.com/rodriveracom/ephemeral. Run `make test test-portable` and `go vet ./...` before submitting. Native ARM64 tests run in GitHub Actions on pull requests.
