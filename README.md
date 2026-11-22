@@ -86,3 +86,7 @@ Workflows use forward-only graphs and statically declared child groups. The engi
 ## Contributing
 
 Open an issue or pull request at https://github.com/rodriveracom/ephemeral. Run `make test test-portable` and `go vet ./...` before submitting. Native ARM64 tests run in GitHub Actions on pull requests.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
