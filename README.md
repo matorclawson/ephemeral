@@ -1,17 +1,26 @@
-# Ephemeral 0.2.1
+# Ephemeral 0.2.2
 
 A compact single-host durable workflow engine for Linux. Embed package ephemeral in a Go application or drive the included CLI from a worker in any language. Each invocation opens the same local SQLite database. A long-running process can keep the Store open or stream requests to the CLI.
 
 ## Try it
 
-Go module: `github.com/rodriveracom/ephemeral`. Embed it with `go get github.com/rodriveracom/ephemeral`.
+Embed the Go package with `go get github.com/rodriveracom/ephemeral@v0.2.2`. The module path is `github.com/rodriveracom/ephemeral`. Use v0.2.2 or later; v0.2.1 predates the module path.
 
-On a Linux ARM64 host, download the versioned Linux ARM64 tarball and SHA256SUMS from the release. Verify the downloaded file and install the standalone binary.
+To build from source instead, clone the repository and build the CLI (Go 1.25+, no C toolchain needed):
+
+```sh
+git clone https://github.com/rodriveracom/ephemeral.git
+cd ephemeral
+make arm64   # static Linux ARM64 binary in dist/linux-arm64/ephemeral
+# or: CGO_ENABLED=0 go build -mod=vendor -o ephemeral ./cmd/ephemeral
+```
+
+On a Linux ARM64 host, download the versioned Linux ARM64 tarball and SHA256SUMS from the v0.2.2 GitHub Release. Verify the downloaded file and install the standalone binary.
 
 ```sh
 sha256sum --check --ignore-missing SHA256SUMS
-tar -xzf ephemeral-0.2.1-linux-arm64.tar.gz
-install -Dm755 ephemeral-0.2.1-linux-arm64/ephemeral "$HOME/.local/bin/ephemeral"
+tar -xzf ephemeral-0.2.2-linux-arm64.tar.gz
+install -Dm755 ephemeral-0.2.2-linux-arm64/ephemeral "$HOME/.local/bin/ephemeral"
 "$HOME/.local/bin/ephemeral" --version
 ```
 
