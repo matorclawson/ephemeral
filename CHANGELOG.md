@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 — 2026-11-22
+
+- The module path is now github.com/rodriveracom/ephemeral. Update Go imports from `ephemeral` to the new path. The CLI protocol and database format are unchanged. Ephemeral is now a standalone community project. README install, use and contribute instructions are standalone, with a go get install and a build-from-source fallback. Use v0.2.2 or later: v0.2.1 declares the old module name `ephemeral` and cannot be fetched with go get.
+
 ## 0.2.1 — 2026-11-22
 
 - Added runnable CLI approval, branching and parallel review, and embedded Go retry examples with expected results. Run all four examples through make examples. The ARM64 package includes the CLI examples.

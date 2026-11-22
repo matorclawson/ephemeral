@@ -1,4 +1,4 @@
-module ephemeral
+module github.com/rodriveracom/ephemeral
 
 go 1.25.0
 

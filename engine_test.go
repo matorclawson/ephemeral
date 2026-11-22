@@ -26,7 +26,7 @@ func TestRecovery(t *testing.T) {
 	s := open(t, path)
 	steps := []Step{{Kind: "activity", Name: "publish", Attempts: 2}, {Kind: "signal", Name: "confirm"}, {Kind: "timer", Millis: 1}}
 	check(t, s.Register("flow", 1, steps))
-	check(t, s.Start("r", "flow", 1, "q", input, map[string]string{"org": "zeo"}))
+	check(t, s.Start("r", "flow", 1, "q", input, map[string]string{"org": "acme"}))
 	first, e := s.Poll("q", time.Millisecond)
 	check(t, e)
 	s.Close()
@@ -49,7 +49,7 @@ func TestRecovery(t *testing.T) {
 	check(t, e)
 	d, e := s.Describe("r")
 	check(t, e)
-	if d.State != "completed" || d.Attributes["org"] != "zeo" {
+	if d.State != "completed" || d.Attributes["org"] != "acme" {
 		t.Fatal(d)
 	}
 	h, e := s.History("r", 0, 100)
@@ -57,7 +57,7 @@ func TestRecovery(t *testing.T) {
 	if len(h) != 14 || h[len(h)-1].Kind != "WorkflowCompleted" {
 		t.Fatal(h)
 	}
-	ids, e := s.Find("org", "zeo", "", 1)
+	ids, e := s.Find("org", "acme", "", 1)
 	check(t, e)
 	if len(ids) != 1 || ids[0] != "r" {
 		t.Fatal(ids)
@@ -141,7 +141,7 @@ func TestMeasurement(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		start := time.Now()
 		id := fmt.Sprintf("r%06d", i)
-		check(t, s.Start(id, "f", 1, "q", input, map[string]string{"org": "zeo"}))
+		check(t, s.Start(id, "f", 1, "q", input, map[string]string{"org": "acme"}))
 		v, e := s.Poll("q", time.Hour)
 		check(t, e)
 		check(t, s.Finish(id, v.Token, input, ""))
