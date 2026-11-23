@@ -1,4 +1,4 @@
-# Ephemeral 0.2.1
+# Ephemeral 0.3.0
 
 A compact single-host durable workflow engine for Linux. Embed package ephemeral in a Go application or drive the included CLI from a worker in any language. Each invocation opens the same local SQLite database. A long-running process can keep the Store open or stream requests to the CLI.
 
@@ -8,8 +8,8 @@ On a Linux ARM64 host, download the versioned Linux ARM64 tarball and SHA256SUMS
 
 ```sh
 sha256sum --check --ignore-missing SHA256SUMS
-tar -xzf ephemeral-0.2.1-linux-arm64.tar.gz
-install -Dm755 ephemeral-0.2.1-linux-arm64/ephemeral "$HOME/.local/bin/ephemeral"
+tar -xzf ephemeral-0.3.0-linux-arm64.tar.gz
+install -Dm755 ephemeral-0.3.0-linux-arm64/ephemeral "$HOME/.local/bin/ephemeral"
 "$HOME/.local/bin/ephemeral" --version
 ```
 
@@ -68,6 +68,18 @@ Run ./ephemeral DATABASE and send JSON objects, one per line. Each successful re
 
 Activity steps accept kind, name, attempts and backoff_ms. Signal steps accept kind and name. Timer steps accept kind and millis. Queued signals survive restarts and are consumed once in arrival order within each name. History records transition events, including activity outcomes, signals and attribute changes. Event Data is text, with JSON payloads for structured events. History is retained until the database is removed. Indexed state and attribute queries read committed data directly.
 
+## Event-driven workers
+
+Use `StartOnce` (CLI `start-once`) when a durable input stream can redeliver a record. Choose a stable run ID scoped to the consumer, tenant and logical operation. After creation (true) or a matching replay (false), the consumer may commit its input offset. A conflicting request returns ErrStartConflict. The comparison covers definition name and version, queue, exact JSON input bytes and initial attributes. Attribute map order is immaterial. Nil and empty attribute maps are equivalent. IDs created with ordinary Start or earlier releases have no original fingerprint and return a conflict. Existing backup jobs can finish using the legacy registration path. Retain the workflow database for the entire redelivery window.
+
+Activities may set `retry_delays_ms` to a list of nonnegative durations, one per retry. For example, attempts=3 and retry_delays_ms=[1000,10000] schedules the second attempt one second after failure and the third ten seconds after the next failure. The same policy applies after lease expiry. Use Finish for success or retryable failure and FailPermanent (CLI `fail-permanent`, fields id, token, failure) for a conclusive rejection. A lost external response can require reconciliation.
+
+`NextDue(queue)` (CLI `next-due`) returns the earliest runnable time in milliseconds or an empty result. Workers can subscribe to an application's wake source before consulting NextDue and sleep until the earliest of a hint, due time or bounded fallback. The hint can become stale as other processes commit. Poll still verifies and claims work inside a write transaction. A queue without eligible work uses a read-only check.
+
+See evidence/POSTAL-REVIEW.md for source findings and the integration contract.
+
 ## Scope
 
 Workflows use forward-only graphs and statically declared child groups. The engine runs on one host with local SQLite storage. Remote transport, dynamic fan-out, loops and multi-host failover remain future work.
+
+For scoped recovery, use FindInState(key, value, state, afterID, limit), or pass state to the existing find CLI operation. SQLite filters by the indexed attribute and workflow state before applying the page limit. A backup worker can select its binding and ready state directly and fetch details only for the matching runs.

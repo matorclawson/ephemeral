@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 candidate — 2026-11-23
+
+- Added idempotent workflow submission with conflict detection and immutable start receipts.
+- Added per-attempt retry delays and fenced permanent failures.
+- Added indexed deadline lookup and read-only idle polling. Reused loaded workflow definitions during transitions and removed redundant post-commit rollbacks.
+- Added state-filtered attribute lookup for scoped, paginated recovery.
+- Added cross-store replay coverage, compatibility results and reproducible polling measurements.
+
 ## 0.2.1 — 2026-11-22
 
 - Added runnable CLI approval, branching and parallel review, and embedded Go retry examples with expected results. Run all four examples through make examples. The ARM64 package includes the CLI examples.
