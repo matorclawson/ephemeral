@@ -2,6 +2,7 @@ package ephemeral
 
 /*
 #cgo linux LDFLAGS: -l:libsqlite3.so.0
+#cgo darwin LDFLAGS: -lsqlite3
 #include <stdlib.h>
 typedef struct sqlite3 sqlite3;
 typedef struct sqlite3_stmt sqlite3_stmt;

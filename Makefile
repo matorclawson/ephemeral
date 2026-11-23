@@ -22,7 +22,9 @@ install: build
 	install -Dm755 ephemeral "$(DESTDIR)$(PREFIX)/bin/ephemeral"
 release: arm64
 	python3 scripts/package.py
-verify:
+verify: test test-portable release
+	@out=$$(gofmt -l $$(find . -name '*.go' -not -path './vendor/*')); test -z "$$out" || { echo "gofmt needed:"; echo "$$out"; exit 1; }
+	$(GO) vet -mod=vendor ./...
 	cd $(DIST) && sha256sum -c SHA256SUMS
 
 .PHONY: examples
