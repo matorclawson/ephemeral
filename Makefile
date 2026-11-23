@@ -23,9 +23,11 @@ install: build
 release: arm64
 	python3 scripts/package.py
 verify: test test-portable release
-	@out=$$(gofmt -l $$(find . -name '*.go' -not -path './vendor/*')); test -z "$$out" || { echo "gofmt needed:"; echo "$$out"; exit 1; }
+	@files=$$(find . -name '*.go' -not -path './vendor/*') || exit 1; out=$$(gofmt -l $$files) || exit 1; test -z "$$out" || { echo "gofmt needed:"; echo "$$out"; exit 1; }
 	$(GO) vet -mod=vendor ./...
-	cd $(DIST) && sha256sum -c SHA256SUMS
+	@tar -tzf $(DIST)/$(PKG)-linux-arm64.tar.gz | grep -q '/ephemeral$$' || { echo "binary missing from $(PKG)-linux-arm64.tar.gz"; exit 1; }
+	@tar -tzf $(DIST)/$(PKG)-linux-arm64.tar.gz | grep -q '/LICENSE$$' || { echo "LICENSE missing from $(PKG)-linux-arm64.tar.gz"; exit 1; }
+	@tar -tzf $(DIST)/$(PKG)-source.tar.gz | grep -q '/LICENSE$$' || { echo "LICENSE missing from $(PKG)-source.tar.gz"; exit 1; }
 
 .PHONY: examples
 examples:
