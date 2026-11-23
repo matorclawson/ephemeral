@@ -25,9 +25,7 @@ release: arm64
 verify: test test-portable release
 	@files=$$(find . -name '*.go' -not -path './vendor/*') || exit 1; out=$$(gofmt -l $$files) || exit 1; test -z "$$out" || { echo "gofmt needed:"; echo "$$out"; exit 1; }
 	$(GO) vet -mod=vendor ./...
-	@tar -tzf $(DIST)/$(PKG)-linux-arm64.tar.gz | grep -q '/ephemeral$$' || { echo "binary missing from $(PKG)-linux-arm64.tar.gz"; exit 1; }
-	@tar -tzf $(DIST)/$(PKG)-linux-arm64.tar.gz | grep -q '/LICENSE$$' || { echo "LICENSE missing from $(PKG)-linux-arm64.tar.gz"; exit 1; }
-	@tar -tzf $(DIST)/$(PKG)-source.tar.gz | grep -q '/LICENSE$$' || { echo "LICENSE missing from $(PKG)-source.tar.gz"; exit 1; }
+	python3 scripts/check_archives.py
 
 .PHONY: examples
 examples:
