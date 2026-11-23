@@ -23,9 +23,9 @@ install: build
 release: arm64
 	python3 scripts/package.py
 verify: test test-portable release
-	@out=$$(gofmt -l $$(find . -name '*.go' -not -path './vendor/*')); test -z "$$out" || { echo "gofmt needed:"; echo "$$out"; exit 1; }
+	@files=$$(find . -name '*.go' -not -path './vendor/*') || exit 1; out=$$(gofmt -l $$files) || exit 1; test -z "$$out" || { echo "gofmt needed:"; echo "$$out"; exit 1; }
 	$(GO) vet -mod=vendor ./...
-	cd $(DIST) && sha256sum -c SHA256SUMS
+	python3 scripts/check_archives.py
 
 .PHONY: examples
 examples:

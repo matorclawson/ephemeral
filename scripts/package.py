@@ -18,6 +18,8 @@ with tempfile.TemporaryDirectory() as folder:
         shutil.copy2(root / "examples" / example, pkg / "examples")
     for filename in ["README.md", "CHANGELOG.md"]:
         shutil.copy2(root / filename, pkg)
+    for path in sorted(root.glob("LICENSE*")):
+        shutil.copy2(path, pkg)
     for path in (root / "vendor").rglob("*"):
         if path.is_file() and path.name.upper().startswith(("LICENSE", "COPYING", "NOTICE", "AUTHORS")):
             target = pkg / "notices" / path.relative_to(root / "vendor")

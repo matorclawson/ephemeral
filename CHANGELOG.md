@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The binary tarball now includes the LICENSE file.
+- `make verify` fails when gofmt or the file search errors, even with empty output. It runs scripts/check_archives.py, which reads both archives in full and checks their exact top-level contents, instead of checking SHA256SUMS against itself.
 - Added the MIT LICENSE, copyright Dreamhuggers Pte. Ltd. The source tarball already packages LICENSE files.
 
 ## 0.2.2 — 2026-11-22
