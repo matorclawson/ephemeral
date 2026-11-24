@@ -4,7 +4,7 @@ A compact single-host durable workflow engine for Linux. Embed package ephemeral
 
 ## Try it
 
-Embed the Go package with `go get github.com/rodriveracom/ephemeral@v0.2.2`. The module path is `github.com/rodriveracom/ephemeral`. Use v0.2.2 or later; v0.2.1 predates the module path.
+Embed the Go package with `go get github.com/rodriveracom/ephemeral@v0.3.0`. The module path is `github.com/rodriveracom/ephemeral`. Use v0.3.0 or later; v0.2.1 predates the module path.
 
 To build from source instead, clone the repository and build the CLI (Go 1.25+, no C toolchain needed):
 
@@ -15,7 +15,7 @@ make arm64   # static Linux ARM64 binary in dist/linux-arm64/ephemeral
 # or: CGO_ENABLED=0 go build -mod=vendor -o ephemeral ./cmd/ephemeral
 ```
 
-On a Linux ARM64 host, download the versioned Linux ARM64 tarball and SHA256SUMS from the v0.2.2 GitHub Release. Verify the downloaded file and install the standalone binary.
+On a Linux ARM64 host, download the versioned Linux ARM64 tarball and SHA256SUMS from the v0.3.0 GitHub Release. Verify the downloaded file and install the standalone binary.
 
 ```sh
 sha256sum --check --ignore-missing SHA256SUMS

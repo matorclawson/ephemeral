@@ -121,3 +121,34 @@ func TestScopedRecoveryPages(t *testing.T) {
 		t.Fatal(r)
 	}
 }
+
+func TestStartOnceExactBytes(t *testing.T) {
+	s := open(t, filepath.Join(t.TempDir(), "db"))
+	defer s.Close()
+	check(t, s.Register("job", 1, []Step{{Kind: "signal", Name: "done"}}))
+	// json.Valid accepts malformed UTF-8 inside strings. These two bodies differ only
+	// in such bytes and must not be recognized as the same request.
+	first := json.RawMessage("\"\xff\"")
+	second := json.RawMessage("\"\xfe\"")
+	if !json.Valid(first) || !json.Valid(second) {
+		t.Fatal("test premise: json.Valid must accept these bodies")
+	}
+	v, e := s.StartOnce("r", "job", 1, "q", first, nil)
+	check(t, e)
+	if !v {
+		t.Fatal("not created")
+	}
+	v, e = s.StartOnce("r", "job", 1, "q", first, nil)
+	check(t, e)
+	if v {
+		t.Fatal("replay created a duplicate")
+	}
+	_, e = s.StartOnce("r", "job", 1, "q", second, nil)
+	if !errors.Is(e, ErrStartConflict) {
+		t.Fatal(e)
+	}
+	_, e = s.StartOnce("r", "job", 1, "q", first, map[string]string{"k": "\xff"})
+	if !errors.Is(e, ErrStartConflict) {
+		t.Fatal(e)
+	}
+}
