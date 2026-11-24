@@ -1,0 +1,75 @@
+package bridge_test
+
+import (
+	"context"
+	"ephemeral"
+	dost "github.com/rodriveracom/dostoevsky"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+func TestInterruptedCheckpoint(t *testing.T) {
+	dir := t.TempDir()
+	ctx := context.Background()
+	p := dost.Partition{Topic: "jobs"}
+	group := "runner"
+	check := func(e error) {
+		t.Helper()
+		if e != nil {
+			t.Fatal(e)
+		}
+	}
+	cfg := dost.Config{Node: "local", Nodes: []string{"local"}, Topics: map[string]int{"jobs": 1}}
+	for pass := 0; pass < 2; pass++ {
+		n, e := dost.Open(filepath.Join(dir, "journal"), cfg)
+		check(e)
+		s, e := ephemeral.Open(filepath.Join(dir, "runs.db"))
+		check(e)
+		if pass == 0 {
+			_, e = n.Publish(ctx, "jobs", dost.Message{ID: "operation-42", Key: "account", Value: []byte(`{"object":"42"}`)})
+			check(e)
+		}
+		check(s.Register("verify", 1, []ephemeral.Step{{Kind: "activity", Name: "check"}}))
+		pos, e := n.Position(ctx, p, group)
+		check(e)
+		if pos.Next != 0 {
+			t.Fatal(pos)
+		}
+		record, e := n.Read(ctx, p, pos.Next, false)
+		check(e)
+		id := "jobs/verify/" + record.ID
+		created, e := s.StartOnce(id, "verify", 1, "q", record.Value, nil)
+		check(e)
+		if created != (pass == 0) {
+			t.Fatal(created)
+		}
+		if pass == 1 {
+			check(n.Commit(ctx, p, group, record.Offset, nil))
+			task, e := s.Poll("q", time.Hour)
+			check(e)
+			if task == nil || task.Run != id {
+				t.Fatal(task)
+			}
+			check(s.Finish(id, task.Token, record.Value, ""))
+			events, e := s.History(id, 0, 100)
+			check(e)
+			starts := 0
+			for _, ev := range events {
+				if ev.Kind == "WorkflowStarted" {
+					starts++
+				}
+			}
+			if starts != 1 {
+				t.Fatal(events)
+			}
+			pos, e = n.Position(ctx, p, group)
+			check(e)
+			if pos.Next != 1 {
+				t.Fatal(pos)
+			}
+		}
+		s.Close()
+		check(n.Close())
+	}
+}

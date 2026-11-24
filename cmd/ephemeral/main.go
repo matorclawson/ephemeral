@@ -27,6 +27,16 @@ func dispatch(s *ephemeral.Store, r request) (any, error) {
 		return nil, s.Heartbeat(r.ID, r.Token, time.Duration(r.LeaseMS)*time.Millisecond)
 	case "register":
 		return nil, s.Register(r.Name, r.Version, r.Steps)
+	case "start-once":
+		return s.StartOnce(r.ID, r.Name, r.Version, r.Queue, r.Value, r.Attributes)
+	case "next-due":
+		due, ok, e := s.NextDue(r.Queue)
+		if !ok || e != nil {
+			return nil, e
+		}
+		return due, nil
+	case "fail-permanent":
+		return nil, s.FailPermanent(r.ID, r.Token, r.Failure)
 	case "start":
 		return nil, s.Start(r.ID, r.Name, r.Version, r.Queue, r.Value, r.Attributes)
 	case "signal":
@@ -44,7 +54,7 @@ func dispatch(s *ephemeral.Store, r request) (any, error) {
 	case "history":
 		return s.History(r.ID, r.After, r.Limit)
 	case "find":
-		return s.Find(r.Key, r.Equal, r.AfterID, r.Limit)
+		return s.FindInState(r.Key, r.Equal, r.State, r.AfterID, r.Limit)
 	}
 	return nil, fmt.Errorf("unknown op %q", r.Op)
 }

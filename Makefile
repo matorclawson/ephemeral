@@ -1,4 +1,6 @@
 GO ?= go
+# Permit the exact Linux SQLite SONAME used by the native backend.
+export CGO_LDFLAGS_ALLOW := -l:libsqlite3\.so\.0
 VERSION := $(shell cat VERSION)
 DIST := dist
 PKG := ephemeral-$(VERSION)
