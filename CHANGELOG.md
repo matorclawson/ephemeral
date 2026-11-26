@@ -10,7 +10,7 @@
 - Added per-attempt retry delays and fenced permanent failures.
 - Added indexed deadline lookup and read-only idle polling. Reused loaded workflow definitions during transitions and removed redundant post-commit rollbacks.
 - Added state-filtered attribute lookup for scoped, paginated recovery.
-- Added cross-store replay coverage, compatibility results and reproducible polling measurements.
+- Added cross-store replay coverage.
 - The binary tarball now includes the LICENSE file.
 - `make verify` fails when gofmt or the file search errors, even with empty output. It runs scripts/check_archives.py, which reads both archives in full and checks their exact top-level contents, instead of checking SHA256SUMS against itself.
 - Added the MIT LICENSE, copyright Dreamhuggers Pte. Ltd. The source tarball already packages LICENSE files.

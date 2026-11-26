@@ -94,8 +94,6 @@ Activities may set `retry_delays_ms` to a list of nonnegative durations, one per
 
 `NextDue(queue)` (CLI `next-due`) returns the earliest runnable time in milliseconds or an empty result. Workers can subscribe to an application's wake source before consulting NextDue and sleep until the earliest of a hint, due time or bounded fallback. The hint can become stale as other processes commit. Poll still verifies and claims work inside a write transaction. A queue without eligible work uses a read-only check.
 
-See evidence/POSTAL-REVIEW.md for source findings and the integration contract.
-
 ## Scope
 
 Workflows use forward-only graphs and statically declared child groups. The engine runs on one host with local SQLite storage. Remote transport, dynamic fan-out, loops and multi-host failover remain future work.
