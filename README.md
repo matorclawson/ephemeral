@@ -66,18 +66,21 @@ Run ./ephemeral DATABASE and send JSON objects, one per line. Each successful re
 |---|---|---|
 | register | name, version, steps | null; same immutable definition can be registered again |
 | start | id, name, version, queue, value, attributes | null; duplicate run ID fails |
+| start-once | id, name, version, queue, value, attributes | true when created, false for a matching replay; a different request for the same ID fails |
 | poll | queue, leaseMS | task or null |
+| next-due | queue | earliest runnable time in Unix milliseconds, or null |
 | heartbeat | id, token, leaseMS | null |
 | finish | id, token, value or nonempty failure | null |
+| fail-permanent | id, token, nonempty failure | null; fails the run without further attempts |
 | signal | id, key, name, value | null; retry with identical key, name and payload bytes is safe |
 | cancel | id | null |
 | attributes | id, attributes | upsert string keys and values |
 | describe | id | run state, value, version, step, attempts, due time and attributes |
 | history | id, after, limit | ordered events after the exclusive global sequence cursor |
 | list | state (optional), afterID, limit | run IDs in ID order |
-| find | key, equal, afterID, limit | indexed exact string match in ID order |
+| find | key, equal, state (optional), afterID, limit | indexed exact string match in ID order, filtered by run state before pagination |
 
-Activity steps accept kind, name, attempts and backoff_ms. Signal steps accept kind and name. Timer steps accept kind and millis. Queued signals survive restarts and are consumed once in arrival order within each name. History records transition events, including activity outcomes, signals and attribute changes. Event Data is text, with JSON payloads for structured events. History is retained until the database is removed. Indexed state and attribute queries read committed data directly.
+Activity steps accept kind, name, attempts and either backoff_ms or retry_delays_ms. Signal steps accept kind and name. Timer steps accept kind and millis. Queued signals survive restarts and are consumed once in arrival order within each name. History records transition events, including activity outcomes, signals and attribute changes. Event Data is text, with JSON payloads for structured events. History is retained until the database is removed. Indexed state and attribute queries read committed data directly.
 
 ## Event-driven workers
 
