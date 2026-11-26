@@ -97,7 +97,13 @@ For scoped recovery, use FindInState(key, value, state, afterID, limit), or pass
 
 ## Contributing
 
-Open an issue or pull request at https://github.com/rodriveracom/ephemeral. Run `make test test-portable` and `go vet ./...` before submitting. Native ARM64 tests run in GitHub Actions on pull requests.
+Open an issue or pull request at https://github.com/rodriveracom/ephemeral. Run `make verify` before submitting. It tests both SQLite backends, builds the release archives into dist/ and checks them, and runs gofmt and go vet. It needs Go 1.25+, Python 3, a C compiler and the system SQLite library (libsqlite3). Native ARM64 checks also run in GitHub Actions on pull requests.
+
+Run as: your normal user. Where: a Linux or macOS machine with those tools, in the repository root. sudo: no.
+
+```sh
+make verify
+```
 
 ## License
 
