@@ -8,7 +8,7 @@ Embed the Go package with `go get github.com/rodriveracom/ephemeral@v0.3.0`. The
 
 To build from source instead, clone the repository and build the CLI (Go 1.25+, no C toolchain needed):
 
-Run as: your normal user. Where: any machine with Git and Go, in the directory that should hold the clone. sudo: no.
+Run as: your normal user. Where: a Linux or macOS machine with Git, Go 1.25+, Make and a POSIX shell, in the directory that should hold the clone. sudo: no.
 
 ```sh
 git clone https://github.com/rodriveracom/ephemeral.git
@@ -56,7 +56,7 @@ Run `make examples` from the source root to execute the CLI approval workflow, a
 
 Register an immutable (name, positive version) definition containing an ordered list of steps. Start a unique run ID pinned to that version on a named queue. The initial JSON value becomes the first activity's input. A successful activity replaces it with its JSON result. A signal step replaces it with the consumed payload. Timers preserve it. The final value is the workflow result. New versions can coexist with active older runs.
 
-Poll from a worker loop, execute the named activity, and finish with its token. Poll returns JSON null when it has no task. The caller sets idle polling frequency. Timers and timeouts advance only when their queue is polled, including after a restart. Each poll processes up to 32 internal transitions. A timer is an earliest eligible time. Worker clocks on a shared host use wall time. A periodic heartbeat can extend an active lease. Attempts includes the initial attempt and defaults to one. Backoff is a fixed delay. On expiry or explicit failure, the engine either schedules a fresh attempt or closes the workflow as failed. Cancellation fences off subsequent results. A running activity may already have acted externally.
+Poll from a worker loop, execute the named activity, and finish with its token. Poll returns JSON null when it has no task. The caller sets idle polling frequency. Timers and timeouts advance only when their queue is polled, including after a restart. Each poll processes up to 32 internal transitions. A timer is an earliest eligible time. Worker clocks on a shared host use wall time. A periodic heartbeat can extend an active lease. Attempts includes the initial attempt and defaults to one. The retry delay is the fixed backoff_ms, or the matching retry_delays_ms entry. On expiry or explicit failure, the engine either schedules a fresh attempt or closes the workflow as failed. Cancellation fences off subsequent results. A running activity may already have acted externally.
 
 The local state, pending work, and history for each transition commit together under SQLite WAL with synchronous FULL. Keep the database on local storage. Use SQLite's online backup facility for live backups. Copying only the main file while WAL is active can lose recent commits. The database and its directory should be private to trusted clients.
 
@@ -70,7 +70,7 @@ Run ./ephemeral DATABASE and send JSON objects, one per line. Each successful re
 |---|---|---|
 | register | name, version, steps | null; same immutable definition can be registered again |
 | start | id, name, version, queue, value, attributes | null; duplicate run ID fails |
-| start-once | id, name, version, queue, value, attributes | true when created, false for a matching replay; a different request for the same ID fails |
+| start-once | id, name, version, queue, value, attributes | true when created, false for a matching replay; a different request for the same ID fails, as does an ID created by plain start |
 | poll | queue, leaseMS | task or null |
 | next-due | queue | earliest runnable time in Unix milliseconds, or null |
 | heartbeat | id, token, leaseMS | null |
@@ -84,7 +84,7 @@ Run ./ephemeral DATABASE and send JSON objects, one per line. Each successful re
 | list | state (optional), afterID, limit | run IDs in ID order |
 | find | key, equal, state (optional), afterID, limit | indexed exact string match in ID order, filtered by run state before pagination |
 
-Activity steps accept kind, name, attempts and either backoff_ms or retry_delays_ms. Signal steps accept kind and name. Timer steps accept kind and millis. Queued signals survive restarts and are consumed once in arrival order within each name. History records transition events, including activity outcomes, signals and attribute changes. Event Data is text, with JSON payloads for structured events. History is retained until the database is removed. Indexed state and attribute queries read committed data directly.
+Activity steps accept kind, name, attempts and either backoff_ms or retry_delays_ms. A nonempty retry_delays_ms needs exactly attempts-1 entries, none negative, and no nonzero backoff_ms. Signal steps accept kind and name. Timer steps accept kind and millis. Queued signals survive restarts and are consumed once in arrival order within each name. History records transition events, including activity outcomes, signals and attribute changes. Event Data is text, with JSON payloads for structured events. History is retained until the database is removed. Indexed state and attribute queries read committed data directly.
 
 ## Event-driven workers
 
