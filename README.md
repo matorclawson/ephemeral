@@ -70,7 +70,7 @@ Run ./ephemeral DATABASE and send JSON objects, one per line. Each successful re
 |---|---|---|
 | register | name, version, steps | null; same immutable definition can be registered again |
 | start | id, name, version, queue, value, attributes | null; duplicate run ID fails |
-| start-once | id, name, version, queue, value, attributes | true when created, false for a matching replay; a different request for the same ID fails, as does an ID created by plain start |
+| start-once | id, name, version, queue, value, attributes | true when created, false for a matching replay; a different request for the same ID fails, as does any existing ID without a stored start fingerprint, such as one created by plain start or by an earlier release |
 | poll | queue, leaseMS | task or null |
 | next-due | queue | earliest runnable time in Unix milliseconds, or null |
 | heartbeat | id, token, leaseMS | null |
