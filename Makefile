@@ -35,8 +35,12 @@ release-check:
 	@d=$$(mktemp -d) || exit 1; trap 'rm -rf "$$d"' EXIT; \
 	cp $(DIST)/*.tar.gz $(DIST)/SHA256SUMS "$$d"/ || exit 1; \
 	cd "$$d" || exit 1; \
-	for f in *.tar.gz; do grep -qF "  $$f" SHA256SUMS || { echo "$$f is not listed in SHA256SUMS"; exit 1; }; done; \
-	sha256sum -c SHA256SUMS
+	want=$$(printf '%s\n' $(PKG)-linux-arm64.tar.gz $(PKG)-source.tar.gz); \
+	have=$$(printf '%s\n' *.tar.gz | LC_ALL=C sort); \
+	test "$$have" = "$$want" || { echo "dist must hold exactly:"; echo "$$want"; echo "found:"; echo "$$have"; exit 1; }; \
+	listed=$$(awk '{print $$2}' SHA256SUMS | LC_ALL=C sort); \
+	test "$$listed" = "$$want" || { echo "SHA256SUMS must list exactly:"; echo "$$want"; echo "listed:"; echo "$$listed"; exit 1; }; \
+	sha256sum --strict -c SHA256SUMS
 
 .PHONY: examples
 examples:
