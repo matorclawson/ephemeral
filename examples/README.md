@@ -13,12 +13,16 @@ From the unpacked source root on Linux, run `make examples` (Go 1.25+, Python 3,
 
 Each line of approval.jsonl is a complete request. Run the file against a fresh database. Each output line corresponds to the input line in the same position.
 
+Run as: your normal user. Where: the repository root or unpacked package, with the ephemeral binary there. sudo: no. Use the same shell for the next command, which reuses $dbdir.
+
 ```sh
 dbdir=$(mktemp -d)
 ./ephemeral "$dbdir/example.db" < examples/approval.jsonl
 ```
 
 The third response lists draft-42 as waiting. The fifth has State completed and Value {"approved":true}. Inspect the same database again to read the first two events:
+
+Run as: the same user, shell and directory as above. sudo: no.
 
 ```sh
 echo '{"op":"history","id":"draft-42","limit":2}' | ./ephemeral "$dbdir/example.db"
