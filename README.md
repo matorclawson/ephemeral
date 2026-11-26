@@ -8,6 +8,8 @@ Embed the Go package with `go get github.com/rodriveracom/ephemeral@v0.3.0`. The
 
 To build from source instead, clone the repository and build the CLI (Go 1.25+, no C toolchain needed):
 
+Run as: your normal user. Where: any machine with Git and Go, in the directory that should hold the clone. sudo: no.
+
 ```sh
 git clone https://github.com/rodriveracom/ephemeral.git
 cd ephemeral
@@ -16,6 +18,8 @@ make arm64   # static Linux ARM64 binary in dist/linux-arm64/ephemeral
 ```
 
 On a Linux ARM64 host, download the versioned Linux ARM64 tarball and SHA256SUMS from the v0.3.0 GitHub Release. Verify the downloaded file and install the standalone binary.
+
+Run as: your normal user. Where: the Linux ARM64 host, in the directory holding the two downloads. sudo: no.
 
 ```sh
 sha256sum --check --ignore-missing SHA256SUMS
