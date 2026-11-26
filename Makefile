@@ -29,6 +29,19 @@ verify: test test-portable release
 	$(GO) vet -mod=vendor ./...
 	python3 scripts/check_archives.py
 
+# Run after make release. Checks copies in a fresh directory, so only the files themselves count.
+.PHONY: release-check
+release-check:
+	@d=$$(mktemp -d) || exit 1; trap 'rm -rf "$$d"' EXIT; \
+	cp $(DIST)/*.tar.gz $(DIST)/SHA256SUMS "$$d"/ || exit 1; \
+	cd "$$d" || exit 1; \
+	want=$$(printf '%s\n' $(PKG)-linux-arm64.tar.gz $(PKG)-source.tar.gz); \
+	have=$$(printf '%s\n' *.tar.gz | LC_ALL=C sort); \
+	test "$$have" = "$$want" || { echo "dist must hold exactly:"; echo "$$want"; echo "found:"; echo "$$have"; exit 1; }; \
+	listed=$$(awk '{print $$2}' SHA256SUMS | LC_ALL=C sort); \
+	test "$$listed" = "$$want" || { echo "SHA256SUMS must list exactly:"; echo "$$want"; echo "listed:"; echo "$$listed"; exit 1; }; \
+	sha256sum --strict -c SHA256SUMS
+
 .PHONY: examples
 examples:
 	CGO_ENABLED=0 $(GO) build $(FLAGS) -o ephemeral ./cmd/ephemeral
