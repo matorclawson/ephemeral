@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Added `make release-check`, which checks the built archives against SHA256SUMS in a fresh directory.
+
 ## 0.3.0 — 2026-11-24
 
 - Added idempotent workflow submission with conflict detection and immutable start receipts.

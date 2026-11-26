@@ -29,6 +29,15 @@ verify: test test-portable release
 	$(GO) vet -mod=vendor ./...
 	python3 scripts/check_archives.py
 
+# Run after make release. Checks copies in a fresh directory, so only the files themselves count.
+.PHONY: release-check
+release-check:
+	@d=$$(mktemp -d) || exit 1; trap 'rm -rf "$$d"' EXIT; \
+	cp $(DIST)/*.tar.gz $(DIST)/SHA256SUMS "$$d"/ || exit 1; \
+	cd "$$d" || exit 1; \
+	for f in *.tar.gz; do grep -qF "  $$f" SHA256SUMS || { echo "$$f is not listed in SHA256SUMS"; exit 1; }; done; \
+	sha256sum -c SHA256SUMS
+
 .PHONY: examples
 examples:
 	CGO_ENABLED=0 $(GO) build $(FLAGS) -o ephemeral ./cmd/ephemeral
