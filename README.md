@@ -1,6 +1,6 @@
 # Ephemeral
 
-**Approvals, retries and timers that survive a restart, with one SQLite file and no server to run.**
+**Approvals, retries and timers that survive a restart, with one local SQLite database and no server to run.**
 
 Ephemeral is a small durable workflow engine for one host, released for Linux ARM64. Workflow state, pending work and history are committed to a local SQLite database. Embed the Go package, or send JSON lines to the CLI from a worker in any language. Activities with retries run at least once; see [Execution model](#execution-model) and [Scope](#scope) for the limits.
 
@@ -10,7 +10,7 @@ Ephemeral is a small durable workflow engine for one host, released for Linux AR
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/architecture-dark.svg">
-  <img src="docs/img/architecture-light.svg" alt="Go applications use the engine directly; other workers use the CLI. The engine stores everything in one local SQLite file.">
+  <img src="docs/img/architecture-light.svg" alt="Go applications use the engine directly; other workers use the CLI. The engine stores everything in one local SQLite database.">
 </picture>
 
 ## Quick start
