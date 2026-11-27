@@ -82,12 +82,26 @@ func TestHeartbeatExtendsLiveLeaseOnly(t *testing.T) {
 	s := fresh(t)
 	must(t, s.Register("job", 1, one))
 	must(t, s.Start("r", "job", 1, "q", in, nil))
-	task := lease(t, s, "q", 500*time.Millisecond)
+	task := lease(t, s, "q", 2*time.Second)
+	expiry := func() int64 {
+		t.Helper()
+		d, e := s.Describe("r")
+		must(t, e)
+		return d.DueMillis
+	}
+	original := expiry()
 	if s.Heartbeat("r", "wrong", time.Hour) == nil {
 		t.Fatal("heartbeat with a wrong token")
 	}
+	if got := expiry(); got != original {
+		t.Fatal("refused heartbeat moved the expiry", original, got)
+	}
 	must(t, s.Heartbeat("r", task.Token, time.Hour))
-	time.Sleep(800 * time.Millisecond)
+	if got := expiry(); got <= original {
+		t.Fatal("expiry not extended", original, got)
+	}
+	// Outlive the original lease.
+	time.Sleep(time.Until(time.UnixMilli(original)) + 50*time.Millisecond)
 	idle(t, s, "q")
 	must(t, s.Finish("r", task.Token, in, ""))
 	state(t, s, "r", "completed")
@@ -191,8 +205,19 @@ func TestHistoryAndListPages(t *testing.T) {
 		after = page[0].Sequence
 		paged = append(paged, page...)
 	}
-	if len(all) < 2 || !slices.Equal(all, paged) {
+	if !slices.Equal(all, paged) {
 		t.Fatal(all, paged)
+	}
+	// Both reads could drop the same event, so also check what the fixture recorded.
+	var kinds []string
+	for _, event := range all {
+		if event.Step != 0 {
+			t.Fatal("step", event)
+		}
+		kinds = append(kinds, event.Kind)
+	}
+	if !slices.Equal(kinds, []string{"WorkflowStarted", "ActivityScheduled"}) {
+		t.Fatal(kinds)
 	}
 
 	must(t, s.Cancel("b"))
@@ -221,26 +246,34 @@ func TestHistoryAndListPages(t *testing.T) {
 	}
 }
 
+// Compares recorded times, so a slow polling loop cannot hide an early firing.
 func TestTimerDoesNotFireEarly(t *testing.T) {
 	s := fresh(t)
 	must(t, s.Register("job", 1, []ephemeral.Step{{Kind: "timer", Millis: 200}}))
-	begin := time.Now()
+	before := time.Now().UnixMilli()
 	must(t, s.Start("r", "job", 1, "q", in, nil))
-	for {
-		idle(t, s, "q")
-		d, e := s.Describe("r")
-		must(t, e)
-		if d.State == "completed" {
-			break
-		}
-		if time.Since(begin) > 10*time.Second {
+	after := time.Now().UnixMilli()
+	d, e := s.Describe("r")
+	must(t, e)
+	due := d.DueMillis
+	if d.State != "timer" || due < before+200 || due > after+200 {
+		t.Fatal("deadline does not match the duration", d, before, after)
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	for d.State != "completed" {
+		if time.Now().After(deadline) {
 			t.Fatal("timer did not fire", d)
 		}
 		time.Sleep(5 * time.Millisecond)
+		idle(t, s, "q")
+		d, e = s.Describe("r")
+		must(t, e)
 	}
-	// Due times have millisecond resolution.
-	if elapsed := time.Since(begin); elapsed < 199*time.Millisecond {
-		t.Fatal("fired early", elapsed)
+	history, e := s.History("r", 0, 100)
+	must(t, e)
+	fired := slices.IndexFunc(history, func(event ephemeral.Event) bool { return event.Kind == "TimerFired" })
+	if fired < 0 || history[fired].TimeMillis < due {
+		t.Fatal("fired early or not recorded", due, history)
 	}
 }
 
