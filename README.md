@@ -1,8 +1,34 @@
-# Ephemeral 0.3.0
+# Ephemeral
 
-Ephemeral is a small durable workflow engine for one Linux host. Workflow state, pending work and history are committed to a local SQLite database, so approvals, retries, timers and child workflows resume from saved state after a restart, with no server to run. Embed the Go package, or send JSON lines to the CLI from a worker in any language. Activities with retries run at least once; see [Execution model](#execution-model) and [Scope](#scope) for the limits.
+**Approvals, retries and timers that survive a restart, with one SQLite file and no server to run.**
+
+Ephemeral is a small durable workflow engine for one host, released for Linux ARM64. Workflow state, pending work and history are committed to a local SQLite database. Embed the Go package, or send JSON lines to the CLI from a worker in any language. Activities with retries run at least once; see [Execution model](#execution-model) and [Scope](#scope) for the limits.
+
+![Terminal capture: the approval example runs through the Ephemeral CLI and the run completes with approved true](docs/img/quickstart.svg)
+
+*A real run of the approval example. [How it was captured](#about-the-visuals).*
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/architecture-dark.svg">
+  <img src="docs/img/architecture-light.svg" alt="Go applications use the engine directly; other workers use the CLI. The engine stores everything in one local SQLite file.">
+</picture>
 
 ## Quick start
+
+### From source, macOS or Linux
+
+This is the run shown above; it took 9.1 seconds in that one run.
+
+Run as: your normal user. Where: a macOS or Linux machine with Git and Go 1.25+, in a directory without an `ephemeral` folder. sudo: no.
+
+```sh
+git clone -q --branch v0.3.0 https://github.com/rodriveracom/ephemeral.git &&
+  cd ephemeral &&
+  CGO_ENABLED=0 go build -mod=vendor -o ephemeral ./cmd/ephemeral &&
+  ./ephemeral "$(mktemp -d)/example.db" < examples/approval.jsonl
+```
+
+### From the release binary, Linux ARM64
 
 This registers an approval workflow, starts a run, approves it and reads the history, using the v0.3.0 release binary.
 
@@ -19,6 +45,30 @@ cd ephemeral-0.3.0-linux-arm64
 ```
 
 There is one reply line per request. The third lists `draft-42` as waiting, and the fifth shows it completed with `{"approved":true}`. The [examples guide](examples/README.md) continues from here.
+
+## What makes it different
+
+- **Nothing to operate.** The engine is a Go package and a CLI. Your data is one local SQLite database.
+- **State survives restarts.** Reopen the database and runs continue from their saved step. Your code is not replayed.
+- **Leases fence off late workers.** A stale or expired token cannot finish an activity.
+- **Safe redelivery.** `start-once` returns false for a repeated request and rejects a changed one.
+- **Workflows, not only jobs.** Approval signals, timers, branches, and child and parallel workflows, with ordered history.
+
+It is not a distributed system: no network API, no multi-host failover, and no authentication or encryption of stored data. See [Scope](#scope).
+
+## Performance
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/throughput-dark.svg">
+  <img src="docs/img/throughput-light.svg" alt="Throughput: Linux arm64 160.8 runs per second, Apple M4 Max 2119.0 runs per second">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/latency-dark.svg">
+  <img src="docs/img/latency-light.svg" alt="Latency p50, p95 and p99 in milliseconds on both machines">
+</picture>
+
+One run per machine, so variation is not measured. Use the Linux numbers for planning. Commands and receipts are under [Measured results](#measured-results).
 
 ## Status
 
@@ -165,6 +215,10 @@ Activities may set `retry_delays_ms` to a list of nonnegative durations, one per
 Workflows use forward-only graphs and statically declared child groups. The engine runs on one host with local SQLite storage. Remote transport, dynamic fan-out, loops and multi-host failover remain future work.
 
 For scoped recovery, use FindInState(key, value, state, afterID, limit), or pass state to the existing find CLI operation. SQLite filters by the indexed attribute and workflow state before applying the page limit. A backup worker can select its binding and ready state directly and fetch details only for the matching runs.
+
+## About the visuals
+
+The terminal image is the output of one run of the source quick start on Apple M4 Max macOS arm64, from tag v0.3.0 (commit `c2e078a`), on 2026-11-27. It took 9.1 seconds from the first command to the last reply, including clone and build; network speed affects this. Git's checkout notes are omitted, long lines are wrapped, and the middle of the last line (the history) is cut, marked `[…]`. SHA-256 of the full program output: `b268d81130561dad8548f3e71fe778d0a2f9c35423351460952a594d3378f4bc`. The diagram is drawn by hand. The charts plot the numbers in [Measured results](#measured-results).
 
 ## Contributing
 
