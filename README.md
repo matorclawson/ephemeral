@@ -1,8 +1,58 @@
 # Ephemeral 0.3.0
 
-A compact single-host durable workflow engine for Linux. Embed package ephemeral in a Go application or drive the included CLI from a worker in any language. Each invocation opens the same local SQLite database. A long-running process can keep the Store open or stream requests to the CLI.
+Ephemeral is a small durable workflow engine for one Linux host. Workflow state, pending work and history are committed to a local SQLite database, so approvals, retries, timers and child workflows resume from saved state after a restart, with no server to run. Embed the Go package, or send JSON lines to the CLI from a worker in any language. Activities with retries run at least once; see [Execution model](#execution-model) and [Scope](#scope) for the limits.
 
-## Try it
+## Quick start
+
+This registers an approval workflow, starts a run, approves it and reads the history, using the v0.3.0 release binary.
+
+Run as: your normal user. Where: a Linux ARM64 host with curl, tar and sha256sum, in an empty directory. sudo: no.
+
+```sh
+base=https://github.com/rodriveracom/ephemeral/releases/download/v0.3.0
+curl -fsSLO "$base/ephemeral-0.3.0-linux-arm64.tar.gz"
+curl -fsSLO "$base/SHA256SUMS"
+sha256sum --check --ignore-missing SHA256SUMS
+tar -xzf ephemeral-0.3.0-linux-arm64.tar.gz
+cd ephemeral-0.3.0-linux-arm64
+./ephemeral "$(mktemp -d)/example.db" < examples/approval.jsonl
+```
+
+There is one reply line per request. The third lists `draft-42` as waiting, and the fifth shows it completed with `{"approved":true}`. The [examples guide](examples/README.md) continues from here.
+
+## Status
+
+As of 2026-11-27.
+
+| Item | State |
+|---|---|
+| Latest release | [v0.3.0](https://github.com/rodriveracom/ephemeral/releases/tag/v0.3.0), published 2026-11-26, Linux ARM64 binary and source archives |
+| Released code | v0.3.0 is commit `c2e078a` |
+| On main, not yet released | Documentation only: this README refresh, once merged |
+| In review | See [open pull requests](https://github.com/rodriveracom/ephemeral/pulls) |
+| Other platforms | No release binary; build from source |
+
+## Measured results
+
+All results are for commit `c2e078a`, run on 2026-11-26 with Go 1.27.0 unless stated. A receipt digest is the SHA-256 of the original run log. The two host logs are kept by the maintainers and are not published.
+
+| Result | Exact command | Host | Receipt |
+|---|---|---|---|
+| Passed. Tests reported ok with cgo and `-race` in 1.621s (engine) and 1.443s (CLI), and without cgo in 0.577s and 0.420s | `make verify && make release && make release-check` | Apple silicon macOS (Darwin arm64) | `ef689c36a2d27341503a3d34d6c7944448fab88cf59e6cb02c2c777e4a5a8577` |
+| Passed. Release archives built and matched SHA256SUMS (this run did not run tests) | `make release && make release-check` | ARM64 Linux host | `e243891f83d95d5df5e5609428bb371f253cb63005e419b383b8d69504f460cd` |
+| Passed. Published binary matched SHA256SUMS, installed and reported 0.3.0; the module resolved from an empty cache | Published-archive install and `go get` smoke test of v0.3.0 | ARM64 Linux host | `f784e7d0a9737aad67bf64e86d2d5da90dba4592094d9981c69e4be13f8e1e9f` |
+| Passed. Tests, examples, release build and verify | `make test test-portable examples release verify` | GitHub Actions `ubuntu-24.04-arm` | [run 45870777737](https://github.com/rodriveracom/ephemeral/actions/runs/45870777737) (Go version from go.mod; no log digest) |
+
+Test times are the package times Go printed for one run. They are not performance benchmarks.
+
+| Benchmark | Value |
+|---|---|
+| Sequential workflow throughput (`make bench`) | Not yet measured for v0.3.0 |
+| Start-poll-finish latency p50, p95, p99 (`make bench`) | Not yet measured for v0.3.0 |
+| Database size after 1000 runs (`make bench`) | Not yet measured for v0.3.0 |
+| Concurrent workers, idle polling cost, crash recovery time | Not yet measured; `make bench` does not cover them |
+
+## Install and build
 
 Embed the Go package with `go get github.com/rodriveracom/ephemeral@v0.3.0`. The module path is `github.com/rodriveracom/ephemeral`. Use v0.3.0 or later; v0.2.1 predates the module path.
 
