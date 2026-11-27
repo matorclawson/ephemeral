@@ -38,9 +38,9 @@ All results are for commit `c2e078a`, run on 2026-11-26 with Go 1.27.0 unless st
 
 | Result | Exact command | Host | Receipt |
 |---|---|---|---|
-| Passed. Tests reported ok with cgo and `-race` in 1.621s (engine) and 1.443s (CLI), and without cgo in 0.577s and 0.420s | `make verify && make release && make release-check` | ENG-UK, Darwin arm64 | `ef689c36a2d27341503a3d34d6c7944448fab88cf59e6cb02c2c777e4a5a8577` |
-| Passed. Release archives built and matched SHA256SUMS (this run did not run tests) | `make release && make release-check` | production-04, Linux arm64 | `e243891f83d95d5df5e5609428bb371f253cb63005e419b383b8d69504f460cd` |
-| Passed. Published binary matched SHA256SUMS, installed and reported 0.3.0; the module resolved from an empty cache | Published-archive install and `go get` smoke test of v0.3.0 | production-04, Linux arm64 | `f784e7d0a9737aad67bf64e86d2d5da90dba4592094d9981c69e4be13f8e1e9f` |
+| Passed. Tests reported ok with cgo and `-race` in 1.621s (engine) and 1.443s (CLI), and without cgo in 0.577s and 0.420s | `make verify && make release && make release-check` | Apple silicon macOS (Darwin arm64) | `ef689c36a2d27341503a3d34d6c7944448fab88cf59e6cb02c2c777e4a5a8577` |
+| Passed. Release archives built and matched SHA256SUMS (this run did not run tests) | `make release && make release-check` | ARM64 Linux host | `e243891f83d95d5df5e5609428bb371f253cb63005e419b383b8d69504f460cd` |
+| Passed. Published binary matched SHA256SUMS, installed and reported 0.3.0; the module resolved from an empty cache | Published-archive install and `go get` smoke test of v0.3.0 | ARM64 Linux host | `f784e7d0a9737aad67bf64e86d2d5da90dba4592094d9981c69e4be13f8e1e9f` |
 | Passed. Tests, examples, release build and verify | `make test test-portable examples release verify` | GitHub Actions `ubuntu-24.04-arm` | [run 45870777737](https://github.com/rodriveracom/ephemeral/actions/runs/45870777737) (Go version from go.mod; no log digest) |
 
 Test times are the package times Go printed for one run. They are not performance benchmarks.
