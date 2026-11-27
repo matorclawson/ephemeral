@@ -28,13 +28,13 @@ As of 2026-11-27.
 |---|---|
 | Latest release | [v0.3.0](https://github.com/rodriveracom/ephemeral/releases/tag/v0.3.0), published 2026-11-26, Linux ARM64 binary and source archives |
 | Released code | v0.3.0 is commit `c2e078a` |
-| On main, not yet released | Documentation only: this README refresh, once merged |
+| On main, not yet released | Documentation changes only |
 | In review | See [open pull requests](https://github.com/rodriveracom/ephemeral/pulls) |
 | Other platforms | No release binary; build from source |
 
 ## Measured results
 
-All results are for commit `c2e078a`, run on 2026-11-26 with Go 1.27.0 unless stated. A receipt digest is the SHA-256 of the original run log. The two host logs are kept by the maintainers and are not published.
+All results are for commit `c2e078a`, with Go 1.27.0 unless stated. The gate and install runs were on 2026-11-26; the benchmark and test-count runs were on 2026-11-27. A receipt digest is the SHA-256 of the original run log. The host logs are kept by the maintainers and are not published.
 
 | Result | Exact command | Host | Receipt |
 |---|---|---|---|
@@ -45,12 +45,28 @@ All results are for commit `c2e078a`, run on 2026-11-26 with Go 1.27.0 unless st
 
 Test times are the package times Go printed for one run. They are not performance benchmarks.
 
-| Benchmark | Value |
-|---|---|
-| Sequential workflow throughput (`make bench`) | Not yet measured for v0.3.0 |
-| Start-poll-finish latency p50, p95, p99 (`make bench`) | Not yet measured for v0.3.0 |
-| Database size after 1000 runs (`make bench`) | Not yet measured for v0.3.0 |
-| Concurrent workers, idle polling cost, crash recovery time | Not yet measured; `make bench` does not cover them |
+Test counts, without cgo, using `CGO_ENABLED=0 go test -mod=vendor -count=1 -v ./...`. The skipped test is the benchmark, which runs only under `make bench`.
+
+| Host | Top-level tests | Receipt |
+|---|---|---|
+| Linux arm64, 2 vCPU Neoverse-N1, ext4 | 18 passed, 1 skipped, 0 failed | `781b874dde4279708374d1603017ddd1c4be4c92c7574e60b2b35a67165b9390` |
+| Apple M4 Max, macOS arm64, APFS | 18 passed, 1 skipped, 0 failed | `d1f8e6849a1c1ca2ae57990b0e4521f169691c27104bdff45ae67291bdfad7ca` |
+
+### Benchmark
+
+`CGO_ENABLED=0 make bench` runs 1000 workflows one after another, each with a single activity: start, poll, finish. One run per host, so there is no measure of variation.
+
+| Measure | Linux arm64, 2 vCPU Neoverse-N1, ext4 | Apple M4 Max, macOS arm64, APFS |
+|---|---|---|
+| Total time, 1000 runs | 6.22 s | 0.47 s |
+| Throughput | 160.8 runs/s | 2119.0 runs/s |
+| Latency p50 | 5.94 ms | 0.43 ms |
+| Latency p95 | 8.33 ms | 0.75 ms |
+| Latency p99 | 10.48 ms | 1.12 ms |
+| Database size after close | 708608 bytes | 708608 bytes |
+| Receipt | `4d2536175f2af3acd075f7f75af8c83e1d4900bc25b1e86153a26db5906aca18` | `b67d792a5a9f4d75a52500f33256c3f0a7cb6b5c2f169f20590c2873bc856b19` |
+
+Use the Linux column for planning: releases target Linux. The reason for the gap between the hosts has not been measured. Concurrent workers, idle polling cost and crash recovery time are not yet measured; `make bench` does not cover them.
 
 ## Install and build
 
