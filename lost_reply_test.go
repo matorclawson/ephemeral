@@ -82,17 +82,19 @@ func TestLostPollReplyExpiry(t *testing.T) {
 		s := newStore(t, path)
 		must(t, s.Register("job", 1, []ephemeral.Step{{Kind: "activity", Name: "call", Attempts: attempts}}))
 		must(t, s.Start("r", "job", 1, "q", in, nil))
-		lease(t, s, "q", 50*time.Millisecond) // reply discarded
+		lost := lease(t, s, "q", 50*time.Millisecond) // reply discarded
 		due := describe(t, s, "r").DueMillis
 		s = reopen(t, s, path)
 		time.Sleep(time.Until(time.UnixMilli(due)) + 50*time.Millisecond)
 		if attempts == 1 {
 			idle(t, s, "q")
 			state(t, s, "r", "failed")
-			continue
-		}
-		if task := lease(t, s, "q", time.Hour); task.Attempt != 2 {
+		} else if task := lease(t, s, "q", time.Hour); task.Attempt != 2 {
 			t.Fatal(task)
+		}
+		// The lost token is stale after expiry.
+		if s.Finish("r", lost.Token, in, "") == nil {
+			t.Fatal("expired token accepted", attempts)
 		}
 	}
 }
