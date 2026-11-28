@@ -110,8 +110,18 @@ func TestLostFinishReply(t *testing.T) {
 		task := lease(t, s, "q", time.Hour)
 		result := json.RawMessage(`"done"`)
 		must(t, s.Finish("r", task.Token, result, c.failure))
+		// A success moves on with the result; a failure retries with the old input.
+		input := result
+		if c.failure != "" {
+			input = in
+		}
+		committed := describe(t, s, "r")
 		s = reopen(t, s, path)
 		recovered := describe(t, s, "r")
+		unchanged(t, recovered, committed)
+		if recovered.Step != c.step || !slices.Equal(recovered.Value, input) {
+			t.Fatal("recovered progress", c.event, recovered)
+		}
 		history, e := s.History("r", 0, 1000)
 		must(t, e)
 		if s.Finish("r", task.Token, result, c.failure) == nil {
@@ -134,14 +144,9 @@ func TestLostFinishReply(t *testing.T) {
 		if (c.failure == "") != (retries == 0) || retries > 1 {
 			t.Fatal("retries", c.event, retries)
 		}
-		// A success moves on with the result; a failure retries with the old input.
-		input := result
-		if c.failure != "" {
-			input = in
-		}
 		next := lease(t, s, "q", time.Hour)
 		if next.Step != c.step || next.Attempt != c.attempt || !slices.Equal(next.Input, input) {
-			t.Fatal("recovered progress", c.event, next)
+			t.Fatal("next task", c.event, next)
 		}
 	}
 }
