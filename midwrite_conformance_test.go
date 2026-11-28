@@ -1,13 +1,16 @@
 // This test kills a process while it keeps writing, so the kill is not aligned
 // with a return from the store. Every acknowledged call must be there afterwards,
-// and at most the one call that followed may be there too, whole. It is a process
-// kill, not a power loss. Where each kill lands is left to timing: no trial is
-// known to have interrupted a transaction.
+// and at most the one call that followed may be there too. Each run found must
+// show the state, position, value and history of a whole number of calls; lease
+// tokens and times are not compared. It is a process kill, not a power loss.
+// Where each kill lands is left to timing: no trial is known to have interrupted
+// a transaction.
 package ephemeral_test
 
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -67,6 +70,9 @@ func killAfter(t *testing.T, path string, calls int, delay time.Duration) int {
 		if line == "ack\n" {
 			acked++
 		} else if line != "" {
+			// Reap first, so that all of stderr has been copied.
+			_ = child.Process.Kill()
+			_ = child.Wait()
 			t.Fatalf("child printed %q\n%s", line, &stderr)
 		}
 		if acked == calls && !killed {
@@ -87,8 +93,8 @@ func killAfter(t *testing.T, path string, calls int, delay time.Duration) int {
 	return acked
 }
 
-// recordedCalls checks that a run's state and history describe the same whole
-// number of calls, and returns that number.
+// recordedCalls checks that everything compared about a run describes the same
+// whole number of calls, and returns that number.
 func recordedCalls(t *testing.T, s *ephemeral.Store, id string) int {
 	t.Helper()
 	d, e := s.Describe(id)
@@ -98,20 +104,41 @@ func recordedCalls(t *testing.T, s *ephemeral.Store, id string) int {
 	must(t, e)
 	history, e := s.History(id, 0, 100)
 	must(t, e)
-	var kinds []string
+	var got []string
 	for _, event := range history {
-		kinds = append(kinds, event.Kind)
-	}
-	all := []string{"WorkflowStarted", "ActivityScheduled", "ActivityStarted", "ActivityCompleted", "WorkflowCompleted"}
-	for calls, want := range []struct {
-		state  string
-		events int
-	}{{"ready", 2}, {"leased", 3}, {"completed", 5}} {
-		if d.State == want.state && slices.Equal(kinds, all[:want.events]) {
-			return calls + 1
+		data := event.Data
+		// The scheduled event also records a time, so keep only the name.
+		if event.Kind == "ActivityScheduled" {
+			var scheduled struct{ Name string }
+			must(t, json.Unmarshal([]byte(data), &scheduled))
+			data = scheduled.Name
 		}
+		got = append(got, fmt.Sprintf("%s %d %s", event.Kind, event.Step, data))
 	}
-	t.Fatal("state and history disagree", id, d.State, kinds)
+	all := []string{
+		"WorkflowStarted 0 " + string(in),
+		"ActivityScheduled 0 call",
+		"ActivityStarted 0 1",
+		"ActivityCompleted 0 " + string(done),
+		"WorkflowCompleted 1 " + string(done),
+	}
+	for calls, want := range []struct {
+		state         string
+		step, attempt int
+		value         json.RawMessage
+		events        int
+	}{{"ready", 0, 0, in, 2}, {"leased", 0, 1, in, 3}, {"completed", 1, 1, done, 5}} {
+		if d.State != want.state {
+			continue
+		}
+		if d.ID != id || d.Name != "job" || d.Version != 1 || d.Queue != "q" || len(d.Attributes) != 0 ||
+			d.Step != want.step || d.Attempt != want.attempt || !bytes.Equal(d.Value, want.value) ||
+			!slices.Equal(got, all[:want.events]) {
+			break
+		}
+		return calls + 1
+	}
+	t.Fatal("not a whole number of calls", d, got)
 	return 0
 }
 
