@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
 	"testing"
@@ -46,6 +47,9 @@ func acknowledge(t *testing.T, path string) {
 	must(t, s.Signal("buffered", "id-1", "go", signalled))
 
 	must(t, syscall.Kill(os.Getpid(), syscall.SIGKILL))
+	// Do not return to the test runner while the signal is on its way.
+	time.Sleep(time.Minute)
+	t.Fatal("still alive after SIGKILL")
 }
 
 func TestAcknowledgedCallsSurviveKill(t *testing.T) {
@@ -81,10 +85,19 @@ func TestAcknowledgedCallsSurviveKill(t *testing.T) {
 	idle(t, s, "b")
 	must(t, s.Finish("held", tokens["held"], done, ""))
 
-	must(t, s.Signal("buffered", "id-1", "go", signalled))
+	// The buffered signal must come from the store: repeat it only afterwards, or
+	// the repeat could stand in for a lost one.
 	idle(t, s, "c")
 	must(t, s.Finish("buffered", tokens["buffered"], done, ""))
 	if task := lease(t, s, "c", time.Hour); task.Run != "buffered" || task.Step != 2 || !bytes.Equal(task.Input, signalled) {
 		t.Fatal("buffered signal lost", task)
+	}
+	before, e := s.History("buffered", 0, 100)
+	must(t, e)
+	must(t, s.Signal("buffered", "id-1", "go", signalled))
+	after, e := s.History("buffered", 0, 100)
+	must(t, e)
+	if !slices.Equal(before, after) {
+		t.Fatal("repeated signal recorded again", before, after)
 	}
 }
